@@ -1,101 +1,79 @@
 # Thông Tin Deploy — Checkpoint 5
 
-> Điền file này sau khi deploy xong. `pytest tests/test_cp5.py` đọc file này
-> để tìm địa chỉ service của bạn và gọi thử.
->
-> **Chỉ ghi TÊN biến môi trường, tuyệt đối không dán giá trị API key vào đây.**
-> Repo này công khai — dán khóa vào là mất khóa.
-
-## Thông Tin Học Viên
+## Thông tin học viên
 
 | Mục | Nội dung |
 |-----|----------|
-| Họ và tên | (điền họ tên) |
-| Mã học viên | (điền mã học viên) |
-| Repo | (điền link repo K4-L3B-DAY12-HoVaTen-MSSV-CloudServicesAndDeployment) |
+| Họ và tên | Tô Huy Thông |
+| Mã học viên | 2A202602608 |
+| Repo | https://github.com/thong0609/K4-L3B-DAY12-ToHuyThong-2A202602608-CloudServicesAndDeployment |
 
-## Service
+## Trạng thái
+
+Đã chuẩn bị cấu hình Railway. Chưa triển khai hoặc xác minh service cloud.
+Thông tin học viên lấy từ tên repository, cần chủ repo kiểm tra lại.
 
 | Mục | Nội dung |
 |-----|----------|
-| Public URL | https://TODO-thay-bang-url-that.up.railway.app |
-| Platform | Railway / Render / Cloud Run — (điền platform bạn dùng) |
-| Ngày deploy | (điền ngày) |
+| Public URL | Chưa có — cần lấy domain HTTPS sau khi deploy |
+| Platform dự kiến | Railway |
+| Ngày deploy | Chưa triển khai |
 
-## Biến Môi Trường Đã Set Trên Cloud
+## Các bước triển khai Railway
 
-Ghi tên biến và **nguồn giá trị**, không ghi giá trị:
+1. Commit và push code đã kiểm tra lên repository trên.
+2. Trong Railway, tạo project từ GitHub repo này.
+3. Thêm Redis vào cùng project, đặt tên service là `Redis`.
+4. Trong Variables của service agent, cấu hình các biến trong bảng dưới.
+5. Deploy agent bằng Dockerfile. Không cần Start Command riêng: Dockerfile đã đọc PORT.
+6. Chờ kiểm tra `/ready` thành công, tạo public domain trong Networking của service agent.
+7. Ghi domain HTTPS thật vào dòng Public URL và ngày deploy vào bảng trên.
+8. Chạy các lệnh kiểm tra và lưu ảnh dashboard, kết quả `/health`.
 
-| Biến | Đã set | Ghi chú |
-|------|--------|---------|
-| `PORT` | ✅ | platform tự gán |
-| `AGENT_API_KEY` | ✅ | đặt trong dashboard, không nằm trong repo |
-| `REDIS_URL` | ✅ | (điền: Redis add-on của platform / Upstash / ...) |
-| `RATE_LIMIT_PER_MINUTE` | ✅ | 10 |
-| `MONTHLY_BUDGET_USD` | ✅ | 10.0 |
-| `LOG_LEVEL` | ✅ | INFO |
+## Biến môi trường cần set trên cloud
 
-## Lệnh Kiểm Tra
+Chưa xác minh các biến đã được set. Không ghi giá trị secret vào tài liệu.
 
-Thay `<URL>` bằng Public URL ở trên:
+| Biến | Nguồn giá trị |
+|------|---------------|
+| `PORT` | Railway cấp; Dockerfile đọc lúc khởi động |
+| `AGENT_API_KEY` | Khóa riêng do chủ repo tạo và đặt trong Variables của agent |
+| `REDIS_URL` | Reference `${{Redis.REDIS_URL}}`; đổi `Redis` nếu service có tên khác |
+| `RATE_LIMIT_PER_MINUTE` | `10` |
+| `MONTHLY_BUDGET_USD` | `10.0` |
+| `LOG_LEVEL` | `INFO` |
 
-```bash
-# 1. Liveness — mong đợi 200 {"status":"ok"}
-curl -i <URL>/health
+## Kiểm tra bằng PowerShell
 
-# 2. Readiness — mong đợi 200 {"status":"ready"} (đã nối được Redis)
-curl -i <URL>/ready
+Nhập domain thật khi được hỏi:
 
-# 3. Không có API key — mong đợi 401
-curl -i -X POST <URL>/ask \
-  -H "Content-Type: application/json" \
-  -d '{"question":"Hello"}'
-
-# 4. Có API key — mong đợi 200 kèm câu trả lời
-curl -i -X POST <URL>/ask \
-  -H "Content-Type: application/json" \
-  -H "X-API-Key: $AGENT_API_KEY" \
-  -H "X-User-Id: sv-test" \
-  -d '{"question":"Deploy là gì?"}'
-
-# 5. Rate limit — gọi 15 lần, những lần cuối phải trả 429
-for i in $(seq 1 15); do
-  curl -s -o /dev/null -w "%{http_code} " -X POST <URL>/ask \
-    -H "Content-Type: application/json" \
-    -H "X-API-Key: $AGENT_API_KEY" \
-    -H "X-User-Id: sv-test" \
-    -d '{"question":"test"}'
-done; echo
+```powershell
+$deployUrl = (Read-Host 'Public URL HTTPS của agent').TrimEnd('/')
+curl.exe -i "$deployUrl/health"
+curl.exe -i "$deployUrl/ready"
+'{"question":"Hello"}' | curl.exe -i -X POST "$deployUrl/ask" -H 'Content-Type: application/json' --data-binary '@-'
 ```
 
-## Kết Quả Chạy Thật
+Mong đợi lần lượt: 200, 200, 401.
 
-Dán output của các lệnh trên vào đây:
+Để test có xác thực, đặt `DEPLOY_API_KEY` trong `.env` cục bộ bằng khóa của
+service cloud; không commit `.env`. Sau khi cập nhật Public URL:
 
+```powershell
+.venv/Scripts/python.exe -m pytest tests/test_cp5.py -v
 ```
-(điền output)
-```
 
-## Ảnh Chụp Màn Hình
+Đảm bảo `LOCAL_FALLBACK` không bật khi kiểm tra cloud. Test có key phải chạy,
+không bị skip, để xác nhận `/ask` trả câu trả lời trên cloud.
 
-Đặt ảnh trong thư mục `screenshots/`:
+## Kết quả chạy thật
 
-- `screenshots/dashboard.png` — trang quản lý service trên platform
-- `screenshots/health.png` — kết quả gọi `/health` từ trình duyệt hoặc curl
+Local Docker đã được xác minh ở CP4: `/health` 200, `/ready` 200.
+Chưa có kết quả cloud. Cần bổ sung output thực tế sau deploy.
 
----
+## Ảnh minh chứng cần bổ sung
 
-## Nếu Dùng Phương Án Dự Phòng
+- `screenshots/dashboard.png`: service đang chạy trên Railway.
+- `screenshots/health.png`: kết quả gọi `/health` trên domain công khai.
 
-Không đăng ký được tài khoản cloud? Vẫn nộp được bài, nhưng CP5 tối đa 60% điểm:
-
-1. Đặt `LOCAL_FALLBACK=true` trong `.env`
-2. Chạy `docker compose up -d` rồi kiểm tra `docker compose ps`
-3. Chụp màn hình vào `screenshots/`
-4. Chạy `pytest tests/test_cp5.py -v` — bộ test sẽ tự chuyển sang kiểm tra
-   `http://localhost:8000`
-5. Ghi rõ lý do không deploy được vào phần dưới đây:
-
-```
-(điền lý do nếu dùng phương án dự phòng, ngược lại xóa mục này)
-```
+Chưa có ảnh minh chứng cloud. Không dùng ảnh dựng hoặc kết quả local thay cho cloud.
