@@ -2,22 +2,19 @@
 
 ## Thông tin học viên
 
-| Mục | Nội dung |
-|-----|----------|
-| Họ và tên | Tô Huy Thông |
-| Mã học viên | 2A202602608 |
-| Repo | https://github.com/thong0609/K4-L3B-DAY12-ToHuyThong-2A202602608-CloudServicesAndDeployment |
+| Mục         | Nội dung                                                                                    |
+| ----------- | ------------------------------------------------------------------------------------------- |
+| Họ và tên   | Tô Huy Thông                                                                                |
+| Mã học viên | 2A202602608                                                                                 |
+| Repo        | https://github.com/thong0609/K4-L3B-DAY12-ToHuyThong-2A202602608-CloudServicesAndDeployment |
 
 ## Trạng thái
 
-Đã chuẩn bị cấu hình Railway. Chưa triển khai hoặc xác minh service cloud.
-Thông tin học viên lấy từ tên repository, cần chủ repo kiểm tra lại.
-
-| Mục | Nội dung |
-|-----|----------|
-| Public URL | Chưa có — cần lấy domain HTTPS sau khi deploy |
-| Platform dự kiến | Railway |
-| Ngày deploy | Chưa triển khai |
+| Mục                  | Nội dung                                                                            |
+| -------------------- | ----------------------------------------------------------------------------------- |
+| Public URL           | https://k4-l3b-day12-tohuythong-2a202602608-cloudservice-production.up.railway.app/ |
+| Platform             | Railway                                                                             |
+| Ngày xác minh deploy | 29/09/2026                                                                          |
 
 ## Các bước triển khai Railway
 
@@ -32,16 +29,16 @@ Thông tin học viên lấy từ tên repository, cần chủ repo kiểm tra l
 
 ## Biến môi trường cần set trên cloud
 
-Chưa xác minh các biến đã được set. Không ghi giá trị secret vào tài liệu.
+Đã xác minh API key hoạt động và ứng dụng kết nối Redis. Các giá trị cấu hình khác cần đối chiếu dashboard. Không ghi giá trị secret vào tài liệu.
 
-| Biến | Nguồn giá trị |
-|------|---------------|
-| `PORT` | Railway cấp; Dockerfile đọc lúc khởi động |
-| `AGENT_API_KEY` | Khóa riêng do chủ repo tạo và đặt trong Variables của agent |
-| `REDIS_URL` | Reference `${{Redis.REDIS_URL}}`; đổi `Redis` nếu service có tên khác |
-| `RATE_LIMIT_PER_MINUTE` | `10` |
-| `MONTHLY_BUDGET_USD` | `10.0` |
-| `LOG_LEVEL` | `INFO` |
+| Biến                    | Nguồn giá trị                                                         |
+| ----------------------- | --------------------------------------------------------------------- |
+| `PORT`                  | Railway cấp; Dockerfile đọc lúc khởi động                             |
+| `AGENT_API_KEY`         | Khóa riêng do chủ repo tạo và đặt trong Variables của agent           |
+| `REDIS_URL`             | Reference `${{Redis.REDIS_URL}}`; đổi `Redis` nếu service có tên khác |
+| `RATE_LIMIT_PER_MINUTE` | `10`                                                                  |
+| `MONTHLY_BUDGET_USD`    | `10.0`                                                                |
+| `LOG_LEVEL`             | `INFO`                                                                |
 
 ## Kiểm tra bằng PowerShell
 
@@ -68,12 +65,20 @@ không bị skip, để xác nhận `/ask` trả câu trả lời trên cloud.
 
 ## Kết quả chạy thật
 
-Local Docker đã được xác minh ở CP4: `/health` 200, `/ready` 200.
-Chưa có kết quả cloud. Cần bổ sung output thực tế sau deploy.
+Kết quả HTTP thật trên Railway ngày 29/09/2026:
+
+| Kiểm tra                       | Kết quả                        |
+| ------------------------------ | ------------------------------ |
+| GET `/health`                  | 200, status=ok                 |
+| GET `/ready`                   | 200, status=ready, redis=true  |
+| POST `/ask` không key          | 401                            |
+| POST `/ask` có key             | 200, có answer/tokens/cost_usd |
+| 11 request liên tiếp cùng user | 10 lần 200, lần 11 trả 429     |
+
+Xem output và thông tin kiểm thử trong [VERIFICATION.md](VERIFICATION.md).
 
 ## Ảnh minh chứng cần bổ sung
 
 - `screenshots/dashboard.png`: service đang chạy trên Railway.
-- `screenshots/health.png`: kết quả gọi `/health` trên domain công khai.
 
-Chưa có ảnh minh chứng cloud. Không dùng ảnh dựng hoặc kết quả local thay cho cloud.
+- `screenshots/health.png`: kết quả gọi `/health` trên domain công khai.
